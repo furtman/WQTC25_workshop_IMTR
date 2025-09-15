@@ -1,9 +1,10 @@
-# Example Shiny app created for the 2025 AWWA WQTC Workshop in Tacoma, WA (11/9/2025 - 11/13/2025)
+# Example Shiny app created for the AWWA WQTC 2025 Workshop in Tacoma, WA (11/9/2025 - 11/13/2025)
 
 # Load Packages ----------------------------------------------------------------
 library(shiny)
 library(ggplot2)
 library(dplyr)
+library(lubridate)
 library(leaflet)
 
 
@@ -14,12 +15,19 @@ sites <- read.csv("Data/streams_sites.csv", stringsAsFactors = FALSE)
 
 # Data Preprocessing -----------------------------------------------------------
 # Parse date column
-data$date_time <- as.POSIXct(data$date_time, tz = "UTC")
+data$date_time <- parse_date_time(
+  data$date_time, 
+  orders = c("ymd", "ymd HM", "ymd HMS")  # "ymd" for date only, "ymd HM" for date + hour:minute
+)
 
 # Merge site info
 data <- data %>%
-  left_join(sites %>% select(SITE_NAME, LAT, LON, AquaticLifeUse),
+  left_join(sites %>% select(SITE_NAME, AquaticLifeUse),
             by = "SITE_NAME")
+
+# Site and parameter names
+site_names <- unique(data$SITE_NAME)
+param_names <- unique(data$parameter)
 
 
 # User Interface (i.e., Front-End Code) ----------------------------------------
@@ -31,10 +39,10 @@ ui <- fluidPage(
     column(6,
            fluidRow(
              column(6,
-                    selectInput("site", "Select Site:", choices = unique(data$SITE_NAME))
+                    selectInput("site", "Select Site:", choices = site_names)
              ),
              column(6,
-                    selectInput("parameter", "Select Parameter:", choices = unique(data$parameter))
+                    selectInput("parameter", "Select Parameter:", choices = param_names)
              )
            ),
            br(),
@@ -55,10 +63,11 @@ ui <- fluidPage(
 # Server (i.e., Back-End Code) -------------------------------------------------
 server <- function(input, output, session) {
   
+  ## Reactive Values -----------------------------------------------------------
   # Reactive values to store selected site (from dropdown or map click)
-  selected_site <- reactiveVal(unique(data$SITE_NAME)[1])
+  selected_site <- reactiveVal(site_names[1])
   
-  # Update selected site when dropdown changes
+  # Update selected site RV when dropdown changes
   observeEvent(input$site, {
     selected_site(input$site)
   })

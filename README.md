@@ -5,3 +5,4 @@ This repo contains google colab notebooks that are used during PCW01 workshop at
 ## Example 1 Ammonia Sensor Data Example for Anomaly Detection
 
 ## Example 2 Geospatial data
+https://colab.research.google.com/#scrollTo=PeCnMrDlyC9n
